@@ -5,19 +5,19 @@ public sealed class CalculatorService : ICalculatorService
     public double Add(IReadOnlyList<double> numbers)
     {
         ValidateInput(numbers);
-        return numbers.Sum();
+        return EnsureFinite(numbers.Sum());
     }
 
     public double Subtract(IReadOnlyList<double> numbers)
     {
         ValidateInput(numbers);
-        return numbers.Skip(1).Aggregate(numbers[0], (result, number) => result - number);
+        return EnsureFinite(numbers.Skip(1).Aggregate(numbers[0], (result, number) => result - number));
     }
 
     public double Multiply(IReadOnlyList<double> numbers)
     {
         ValidateInput(numbers);
-        return numbers.Skip(1).Aggregate(numbers[0], (result, number) => result * number);
+        return EnsureFinite(numbers.Skip(1).Aggregate(numbers[0], (result, number) => result * number));
     }
 
     public double Divide(IReadOnlyList<double> numbers)
@@ -29,7 +29,17 @@ public sealed class CalculatorService : ICalculatorService
             throw new DivideByZeroException("Division durch null ist nicht erlaubt.");
         }
 
-        return numbers.Skip(1).Aggregate(numbers[0], (result, number) => result / number);
+        return EnsureFinite(numbers.Skip(1).Aggregate(numbers[0], (result, number) => result / number));
+    }
+
+    private static double EnsureFinite(double result)
+    {
+        if (!double.IsFinite(result))
+        {
+            throw new OverflowException("Das Ergebnis liegt außerhalb des darstellbaren Zahlenbereichs.");
+        }
+
+        return result;
     }
 
     private static void ValidateInput(IReadOnlyList<double> numbers)
