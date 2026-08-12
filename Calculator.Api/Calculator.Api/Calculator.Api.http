@@ -1,6 +1,29 @@
 @Calculator.Api_HostAddress = http://localhost:5116
 
-GET {{Calculator.Api_HostAddress}}
-Accept: application/json
+POST {{Calculator.Api_HostAddress}}/api/calculator/add
+Content-Type: application/json
+
+{ "numbers": [1, 2, 3] }
+
+###
+
+POST {{Calculator.Api_HostAddress}}/api/calculator/subtract
+Content-Type: application/json
+
+{ "numbers": [10, 3, 2] }
+
+###
+
+POST {{Calculator.Api_HostAddress}}/api/calculator/multiply
+Content-Type: application/json
+
+{ "numbers": [2, 3, 4] }
+
+###
+
+POST {{Calculator.Api_HostAddress}}/api/calculator/divide
+Content-Type: application/json
+
+{ "numbers": [100, 5, 2] }
 
 ###
