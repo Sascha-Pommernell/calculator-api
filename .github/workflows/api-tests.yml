@@ -86,15 +86,41 @@ jobs:
           ref: gh-pages
           path: gh-pages
 
-      - name: Allure-Report generieren
-        uses: simple-elf/allure-report-action@v1.12
+      - name: Allure CLI installieren
         if: always()
-        with:
-          allure_results: test-results/allure-results
-          allure_report: allure-report
-          allure_history: allure-history
-          gh_pages: gh-pages
-          keep_reports: 20
+        run: |
+          ALLURE_VERSION=2.32.0
+          curl -fsSLo /tmp/allure.tgz "https://repo.maven.apache.org/maven2/io/qameta/allure/allure-commandline/${ALLURE_VERSION}/allure-commandline-${ALLURE_VERSION}.tgz"
+          sudo tar -xzf /tmp/allure.tgz -C /opt
+          echo "/opt/allure-${ALLURE_VERSION}/bin" >> "$GITHUB_PATH"
+
+      - name: Allure-Report generieren
+        if: always()
+        run: |
+          mkdir -p test-results/allure-results
+
+          # Historie aus vorherigem Lauf (gh-pages) übernehmen
+          if [ -d gh-pages/last-history ]; then
+            mkdir -p test-results/allure-results/history
+            cp -r gh-pages/last-history/. test-results/allure-results/history/
+          fi
+
+          allure generate --clean test-results/allure-results -o allure-report
+
+          # allure-history aufbauen: bestehende Reports übernehmen, max. 20 behalten
+          mkdir -p allure-history
+          if [ -d gh-pages ]; then
+            cp -r gh-pages/. allure-history/
+            rm -rf allure-history/.git
+          fi
+          cd allure-history
+          ls -d [0-9]* 2>/dev/null | sort -n | head -n -19 | xargs -r rm -rf
+          cd ..
+
+          cp -r allure-report "allure-history/${{ github.run_number }}"
+          rm -rf allure-history/last-history
+          cp -r allure-report/history allure-history/last-history
+          printf '<!DOCTYPE html><meta http-equiv="refresh" content="0; url=%s/">' "${{ github.run_number }}" > allure-history/index.html
 
       - name: Allure-Report auf GitHub Pages veröffentlichen
         uses: peaceiris/actions-gh-pages@v4
