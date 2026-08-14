@@ -1,3 +1,4 @@
 <Solution>
   <Project Path="Calculator.Api/Calculator.Api.csproj" />
+  <Project Path="Calculator.Api.Tests/Calculator.Api.Tests.csproj" />
 </Solution>

@@ -2,7 +2,7 @@
 
 ## 1. Zielsetzung
 
-Dieses Dokument beschreibt das Konzept für die automatisierte Testung der **Calculator API** (ASP.NET Core, .NET 10). Ziel ist die Absicherung der fachlichen Korrektheit, der Eingabevalidierung und des API-Vertrags durch automatisierte End-to-End-API-Tests mit **Playwright**, ausgeführt in einer CI-Pipeline über **GitHub Actions**.
+Dieses Dokument beschreibt das Konzept für die automatisierte Testung der **Calculator API** (ASP.NET Core, .NET 10). Ziel ist die Absicherung der fachlichen Korrektheit, der Eingabevalidierung und des API-Vertrags durch automatisierte End-to-End-API-Tests mit **NUnit** und **Microsoft Playwright für .NET**, ergänzt um **Unit-Tests (xUnit)** für die Rechenlogik, ausgeführt in einer CI-Pipeline über **GitHub Actions**.
 
 ## 2. Testgegenstand
 
@@ -15,24 +15,30 @@ Die Calculator API stellt vier REST-Endpunkte bereit:
 | `/api/calculator/multiply` | POST | Multiplikation |
 | `/api/calculator/divide` | POST | Division |
 
-**Request-Body:** `{ "numbers": [zahl1, zahl2, ...] }` – mindestens zwei Zahlen erforderlich.
+**Request-Body:** `{ "numbers": [zahl1, zahl2, ...] }` – mindestens zwei, höchstens 1000 Zahlen.
 
 **Response (200):** `{ "operation": string, "numbers": number[], "result": number }`
 
 **Fehlerfälle (400):** ProblemDetails bei Division durch null, weniger als zwei Zahlen, fehlendem/ungültigem Body.
 
+Zusätzlich stellt die API einen Health-Endpoint `GET /health` bereit, der von Tests und CI als Erreichbarkeits-Probe genutzt wird.
+
 ## 3. Teststrategie
 
-### 3.1 Testebene und Werkzeug
+### 3.1 Testebenen und Werkzeuge
 
-- **Testebene:** API-Tests (Black-Box) gegen die laufende Anwendung – kein Browser nötig, Playwright wird mit dem `APIRequestContext` (`request`-Fixture) verwendet.
-- **Technologie:** Playwright Test (TypeScript), eigenständiges npm-Projekt unter `tests/api`.
-- **Teststart der API:** Die API befindet sich nicht in diesem Repository und wird extern betrieben bzw. gestartet. Die Tests laufen gegen eine bereits laufende API-Instanz; die Basis-URL ist über die Umgebungsvariable `API_BASE_URL` konfigurierbar (Standard: `http://localhost:5116`).
+- **API-Tests (Black-Box)** gegen die laufende Anwendung – kein Browser nötig, Playwright wird mit dem `APIRequestContext` verwendet.
+  - **Technologie:** C#/.NET 10, **NUnit 4** + **Microsoft.Playwright**, Reporting über **Allure** und **TRX**.
+  - **Projekt:** eigenständiges Repository `calculator-api-tests-c` (Projekt `CalculatorApiTests`).
+  - **Ausführung:** parallelisiert auf Fixture-Ebene (NUnit `Parallelizable`); jede Fixture nutzt eine eigene Playwright-Instanz.
+- **Unit-Tests (White-Box)** für die Rechenlogik des `CalculatorService` – **xUnit**-Projekt `Calculator.Api.Tests` im API-Repository (schnellere, feinere Ebene der Testpyramide; läuft in CI vor den API-Tests).
+- **Teststart der API:** Die API wird nicht aus dem Test-Repository gestartet, sondern extern betrieben (lokal via `dotnet run` oder Docker; in CI als Docker-Container mit **Produktionskonfiguration**). Die Basis-URL ist über die Umgebungsvariable `API_BASE_URL` konfigurierbar (Standard: `http://localhost:5116`). Vor dem Testlauf wird die Erreichbarkeit über `GET /health` geprüft; lokal werden die Tests bei nicht erreichbarer API als *Inconclusive* markiert, in CI (`CI=true`) schlagen sie hart fehl, damit die Pipeline nicht „grün ohne Tests“ wird.
 
 ### 3.2 Testarten
 
 | Testart | Abdeckung |
 |---|---|
+| Unit-Tests (xUnit) | Rechenlogik des `CalculatorService` (inkl. Ausnahmefälle) |
 | Funktionale Tests (Happy Path) | Korrekte Ergebnisse aller vier Operationen |
 | Negativtests | Division durch null, ungültige/unvollständige Eingaben |
 | Vertragstests | Response-Struktur, Statuscodes, Content-Type |
@@ -44,8 +50,8 @@ Die Testfälle in Kapitel 4 wurden mit folgenden Black-Box-Testentwurfsverfahren
 
 | Verfahren | Anwendung |
 |---|---|
-| Äquivalenzklassenbildung | Gültige Eingaben (≥ 2 Zahlen, positive/negative/dezimale Werte) vs. ungültige Eingaben (< 2 Zahlen, null, falsche Typen, ungültiges JSON) |
-| Grenzwertanalyse | Leeres Array / 1 Zahl / 2 Zahlen; Divisor 0; Zahlbereichsgrenzen (`1e308`, `1e-308`) |
+| Äquivalenzklassenbildung | Gültige Eingaben (≥ 2 Zahlen, positive/negative/dezimale Werte) vs. ungültige Eingaben (< 2 Zahlen, > 1000 Zahlen, null, falsche Typen, ungültiges JSON) |
+| Grenzwertanalyse | Leeres Array / 1 Zahl / 2 Zahlen; Obergrenze 1000/1001 Zahlen; Divisor 0; Zahlbereichsgrenzen (`1e308`, `1e-308`) |
 | Zustandsunabhängige Vertragsprüfung | Response-Struktur, Statuscodes, HTTP-Methoden, Routen |
 | Fehlererwartungsmethode (Error Guessing) | Gleitkomma-Präzision (0.1 + 0.2), Überlauf/`Infinity`-Serialisierung, Zusatzfelder im Body |
 
@@ -57,6 +63,12 @@ Jeder Testfallgruppe ist eine Priorität zugeordnet, die die Ausführungs- und B
 |---|---|---|
 | Hoch | 4.1 Happy Path, 4.3 Division durch null, 4.4 Eingabevalidierung | Kernfunktionalität und Fehlerbehandlung; Fehler hier betreffen alle Nutzer direkt |
 | Mittel | 4.2 Gleitkomma-Randfälle, 4.5 API-Vertrag | Randbedingungen und Vertragsstabilität; geringere Eintrittswahrscheinlichkeit |
+
+Die Prioritäten sind im Testcode als NUnit-Kategorien (`[Category("Prio-Hoch")]` / `[Category("Prio-Mittel")]`) sowie als Allure-Severity (`critical` / `normal`) hinterlegt. Ein priorisierter Lauf ist damit gezielt möglich, z. B.:
+
+```powershell
+dotnet test --filter "TestCategory=Prio-Hoch"
+```
 
 ### 3.5 Nicht im Scope
 
@@ -117,8 +129,9 @@ Jeder Testfallgruppe ist eine Priorität zugeordnet, die die Ausführungs- und B
 | TC-VAL-06 | syntaktisch ungültiges JSON | 400 |
 | TC-VAL-07 | `{ "numbers": null }` | 400 – explizit null (eigener Pfad gegenüber fehlendem Feld) |
 | TC-VAL-08 | gültiger Body mit `Content-Type: text/plain` | 415 Unsupported Media Type |
+| TC-VAL-09 | `{ "numbers": [1, 1, …] }` mit 1001 Zahlen | 400 – Obergrenze (max. 1000) überschritten |
 
-Zusätzlich wird bei den Validierungsfällen (TC-VAL-01 bis TC-VAL-07) die Struktur der Fehlerantwort geprüft: ProblemDetails gemäß RFC 9457 mit `title` und (bei Modelvalidierung) `errors`-Objekt.
+Zusätzlich wird bei den Validierungsfällen (TC-VAL-01 bis TC-VAL-07 sowie TC-VAL-09) die Struktur der Fehlerantwort geprüft: ProblemDetails gemäß RFC 9457 mit `title`, `status` und nicht-leerem `errors`-Objekt (Modelvalidierung).
 
 ### 4.5 API-Vertrag / Robustheit
 
@@ -135,35 +148,44 @@ Zusätzlich wird bei den Validierungsfällen (TC-VAL-01 bis TC-VAL-07) die Struk
 | Aspekt | Lokal | CI (GitHub Actions) |
 |---|---|---|
 | Betriebssystem | Windows (Entwicklung) | ubuntu-latest |
-| .NET SDK | nicht erforderlich (API extern) | nicht erforderlich (API extern) |
-| Node.js | ≥ 20 | 22 (`actions/setup-node`) |
-| API-Start | extern (laufende API-Instanz erforderlich) | extern (URL via Repository-Variable `API_BASE_URL`) |
-| Basis-URL | `http://localhost:5116` (Standard) | konfigurierbar via `API_BASE_URL` |
+| .NET SDK | .NET 10 SDK | 10.0.x (`actions/setup-dotnet`) bzw. Docker-Images |
+| API-Start | extern (`dotnet run` oder Docker-Container) | Docker-Container (**Produktionskonfiguration**, Erreichbarkeit via `GET /health`) |
+| Testlauf | `dotnet test` gegen laufende API | Docker-Container im gemeinsamen Netzwerk mit der API |
+| Basis-URL | `http://localhost:5116` (Standard) | `http://calculator-api:8080` via `API_BASE_URL` |
 
 ## 6. CI/CD-Integration (GitHub Actions)
 
-- **Trigger:** Push und Pull Request auf `main`, zusätzlich manuell (`workflow_dispatch`).
-- **Workflow-Datei:** `.github/workflows/api-tests.yml`
+Beide Repositories besitzen eine eigene Pipeline:
+
+**API-Repository (`calculator-api`)** – Workflow `.github/workflows/api-tests.yml`:
+
+- **Trigger:** Push und Pull Request auf `main`, zusätzlich manuell (`workflow_dispatch`, dabei ist der Git-Ref des Test-Repos wählbar).
 - **Ablauf:**
-  1. Checkout des Repositories
-  2. Setup Node.js 22 (mit npm-Cache)
-  3. `npm ci` im Testprojekt (`tests/api`)
-  4. `npx playwright test` gegen die extern erreichbare API (`API_BASE_URL` als Repository-Variable)
-  5. Upload des HTML-Testreports als Pages-Artifact (Läufe auf `main`) bzw. als Workflow-Artifact (Pull Requests)
-  6. Veröffentlichung des Reports auf **GitHub Pages** (nur bei Läufen auf `main`)
-- **Fehlerverhalten:** Fehlgeschlagene Tests brechen die Pipeline ab (PR-Gate). In CI werden Tests bei Fehlschlag bis zu 2× wiederholt (Flakiness-Abfederung). Der Report wird auch bei fehlgeschlagenen Tests veröffentlicht, damit Fehleranalysen direkt im Browser möglich sind.
-- **Berechtigungen:** Der Workflow benötigt `pages: write` und `id-token: write`; als Deployment-Mechanismus werden `actions/upload-pages-artifact` und `actions/deploy-pages` verwendet.
-- **Voraussetzung:** In den Repository-Einstellungen muss GitHub Pages mit der Quelle „GitHub Actions“ aktiviert sein.
+  1. Checkout des API-Repos, .NET 10 SDK einrichten
+  2. **Unit-Tests** (`dotnet test Calculator.Api/Calculator.Api.slnx`) als schnelles Quality Gate
+  3. Checkout des Test-Repos (`calculator-api-tests-c`)
+  4. Docker-Images für API und Tests bauen
+  5. API-Container mit **Produktionskonfiguration** starten, Warten auf `GET /health`
+  6. Test-Container im gemeinsamen Docker-Netzwerk ausführen (`API_BASE_URL`, `CI=true`)
+  7. TRX- und Allure-Ergebnisse als Workflow-Artefakt hochladen (14 Tage Aufbewahrung) und TRX als Check veröffentlichen (`dorny/test-reporter`)
+  8. Nur bei Push auf `main`: Allure-Report (inkl. Historie der letzten 20 Läufe) generieren und auf **GitHub Pages** veröffentlichen
+- **Fehlerverhalten:** Fehlgeschlagene Unit- oder API-Tests brechen die Pipeline ab (PR-Gate über den `pull_request`-Trigger). Es gibt keinen automatischen Retry; Flakiness wird durch die Erreichbarkeits-Probe (`/health`) und deterministische, zustandslose Tests vermieden. Ist die API im Testlauf nicht erreichbar, schlagen die Tests wegen `CI=true` hart fehl (kein „grün ohne Tests“). Der Report wird auch bei fehlgeschlagenen Tests veröffentlicht.
+- **Berechtigungen:** `contents: write` (gh-pages-Publish) und `checks: write` (Test-Check).
+- **Voraussetzung:** GitHub Pages mit Quelle „gh-pages-Branch“.
+
+**Test-Repository (`calculator-api-tests-c`)** – Workflow `.github/workflows/tests-ci.yml`:
+
+- **Trigger:** Push und Pull Request auf `main`, zusätzlich manuell (dabei ist der Git-Ref des API-Repos wählbar).
+- **Ablauf:** identisch zu Schritt 3–7 oben (API-Repo wird ausgecheckt, beide Container gebaut, Tests ausgeführt, Ergebnisse als Artefakt/Check veröffentlicht) – ohne Pages-Deployment. Damit werden auch Änderungen am Testcode selbst durch ein PR-Gate absichert.
 
 ## 7. Berichterstattung
 
-- **Lokal:** Playwright-List-Reporter in der Konsole; HTML-Report via `npx playwright show-report`.
-- **CI:** Testergebnisse direkt im Actions-Log sichtbar; der HTML-Report wird über **GitHub Pages** veröffentlicht.
+- **Lokal:** NUnit-Ausgabe in der Konsole; optional TRX (`dotnet test --logger trx`); Allure-Report via `allure serve` über die `allure-results` im Build-Ausgabeverzeichnis.
+- **CI:** Testergebnisse im Actions-Log, als TRX-Check am Commit/PR (`dorny/test-reporter`) und als Workflow-Artefakt (TRX + Allure-Rohdaten, 14 Tage); der **Allure-Report** wird über **GitHub Pages** veröffentlicht.
 - **GitHub Pages:**
-  - Der Playwright-HTML-Report des jeweils letzten Laufs auf `main` ist dauerhaft erreichbar unter:
-    `https://sascha-pommernell.github.io/calculator-api/`
-  - Jeder neue Lauf auf `main` überschreibt den vorherigen Report (es wird immer der aktuelle Stand angezeigt).
-  - Für Pull Requests wird der Report nicht auf Pages deployt, sondern nur als Workflow-Artifact bereitgestellt (14 Tage Aufbewahrung).
+  - Reports der Läufe auf `main` sind versioniert (pro Run-Nummer) erreichbar unter:
+    `https://sascha-pommernell.github.io/calculator-api/<run-nummer>/` (Startseite leitet auf den aktuellen Lauf weiter; Historie der letzten 20 Läufe bleibt erhalten).
+  - Für Pull Requests wird kein Pages-Deployment durchgeführt; Ergebnisse stehen als Workflow-Artefakt (14 Tage) und TRX-Check bereit.
 
 ## 8. Testorganisation
 
@@ -175,9 +197,9 @@ Zusätzlich wird bei den Validierungsfällen (TC-VAL-01 bis TC-VAL-07) die Struk
 
 ### 8.2 Eingangskriterien (Entry Criteria)
 
-- Eine laufende, erreichbare Instanz der Calculator API steht unter der konfigurierten `API_BASE_URL` bereit.
-- Die Testumgebung ist verfügbar (lokal: Node.js ≥ 20; CI: Runner mit Setup-Actions).
-- Das Testprojekt ist installierbar (`npm ci` erfolgreich).
+- Eine laufende, erreichbare Instanz der Calculator API steht unter der konfigurierten `API_BASE_URL` bereit (Erreichbarkeit via `GET /health`).
+- Die Testumgebung ist verfügbar (lokal: .NET 10 SDK; CI: Runner mit Docker).
+- Das Testprojekt ist baubar (`dotnet build` erfolgreich).
 
 ### 8.3 Endekriterien (Exit Criteria / Abnahme)
 
@@ -187,13 +209,13 @@ Zusätzlich wird bei den Validierungsfällen (TC-VAL-01 bis TC-VAL-07) die Struk
 
 ### 8.4 Abbruch- und Wiederaufnahmekriterien (Suspension Criteria)
 
-- **Abbruch:** Die Testdurchführung wird ausgesetzt, wenn die API unter der konfigurierten `API_BASE_URL` nicht erreichbar ist oder mehr als 50 % der Tests aufgrund eines Umgebungsproblems fehlschlagen.
+- **Abbruch:** Die Testdurchführung wird ausgesetzt, wenn die API unter der konfigurierten `API_BASE_URL` nicht erreichbar ist (Prüfung via `GET /health`; lokal: *Inconclusive*, CI: harter Fehlschlag) oder mehr als 50 % der Tests aufgrund eines Umgebungsproblems fehlschlagen.
 - **Wiederaufnahme:** Nach Behebung des blockierenden Problems und erfolgreichem Smoke-Check (ein Happy-Path-Test pro Endpunkt) wird die vollständige Testsuite erneut ausgeführt.
 
 ## 9. Rückverfolgbarkeit (Traceability)
 
-- Jeder automatisierte Test trägt die Testfall-ID aus Kapitel 4 im Testnamen (z. B. `TC-ADD-01: add(1, 2) = 3`).
-- Dadurch ist die Zuordnung Testkonzept ↔ Testcode ↔ Testreport (Playwright-HTML-Report) lückenlos möglich.
+- Jeder automatisierte Test trägt die Testfall-ID aus Kapitel 4 im Testnamen bzw. in der Testbeschreibung (z. B. `TC-ADD-01 add 1+2=3` via `SetArgDisplayNames` oder `TC-FLT-01: …` via `Description`).
+- Dadurch ist die Zuordnung Testkonzept ↔ Testcode ↔ Testreport (Allure/TRX) lückenlos möglich.
 - Bei Änderungen am Testkonzept werden betroffene Testfall-IDs im Commit/PR referenziert.
 
 ## 10. Fehler- und Abweichungsmanagement (Defect Management)
@@ -206,4 +228,4 @@ Zusätzlich wird bei den Validierungsfällen (TC-VAL-01 bis TC-VAL-07) die Struk
 
 - Neue Endpunkte oder Operationen erfordern entsprechende neue Testfälle (Happy Path + Negativtests) vor dem Merge.
 - Bei Änderungen am Response-Format sind die Vertragstests (4.5) anzupassen.
-- Optional zukünftig: Unit-Tests für `CalculatorService` (xUnit) als schnellere, feinere Testebene unterhalb der API-Tests.
+- Unit-Tests für den `CalculatorService` sind als xUnit-Projekt `Calculator.Api.Tests` im API-Repository umgesetzt und laufen in der CI-Pipeline vor den API-Tests.

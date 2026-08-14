@@ -22,9 +22,9 @@ public sealed class CalculatorController : ControllerBase
     /// <response code="400">Ungültige Eingabe.</response>
     [HttpPost("add")]
     [ProducesResponseType<CalculationResponse>(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
     public ActionResult<CalculationResponse> Add([FromBody] CalculationRequest request)
-        => Calculate("Addition", request, _calculatorService.Add);
+        => Calculate(OperationNames.Addition, request, _calculatorService.Add);
 
     /// <summary>Subtrahiert alle weiteren Zahlen von der ersten Zahl.</summary>
     /// <param name="request">Die Zahlen für die Subtraktion.</param>
@@ -33,9 +33,9 @@ public sealed class CalculatorController : ControllerBase
     /// <response code="400">Ungültige Eingabe.</response>
     [HttpPost("subtract")]
     [ProducesResponseType<CalculationResponse>(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
     public ActionResult<CalculationResponse> Subtract([FromBody] CalculationRequest request)
-        => Calculate("Subtraktion", request, _calculatorService.Subtract);
+        => Calculate(OperationNames.Subtraktion, request, _calculatorService.Subtract);
 
     /// <summary>Multipliziert zwei oder mehr Zahlen.</summary>
     /// <param name="request">Die zu multiplizierenden Zahlen.</param>
@@ -44,9 +44,9 @@ public sealed class CalculatorController : ControllerBase
     /// <response code="400">Ungültige Eingabe.</response>
     [HttpPost("multiply")]
     [ProducesResponseType<CalculationResponse>(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
     public ActionResult<CalculationResponse> Multiply([FromBody] CalculationRequest request)
-        => Calculate("Multiplikation", request, _calculatorService.Multiply);
+        => Calculate(OperationNames.Multiplikation, request, _calculatorService.Multiply);
 
     /// <summary>Dividiert die erste Zahl nacheinander durch alle weiteren Zahlen.</summary>
     /// <param name="request">Die Zahlen für die Division.</param>
@@ -55,40 +55,14 @@ public sealed class CalculatorController : ControllerBase
     /// <response code="400">Ungültige Eingabe (z. B. Division durch null).</response>
     [HttpPost("divide")]
     [ProducesResponseType<CalculationResponse>(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
     public ActionResult<CalculationResponse> Divide([FromBody] CalculationRequest request)
-        => Calculate("Division", request, _calculatorService.Divide);
+        => Calculate(OperationNames.Division, request, _calculatorService.Divide);
 
+    // Fachliche Ausnahmen (DivideByZero, Overflow, Argument) behandelt zentral der CalculationExceptionHandler.
     private ActionResult<CalculationResponse> Calculate(
         string operation,
         CalculationRequest request,
         Func<IReadOnlyList<double>, double> calculation)
-    {
-        try
-        {
-            var result = calculation(request.Numbers);
-            return Ok(new CalculationResponse(operation, request.Numbers, result));
-        }
-        catch (DivideByZeroException ex)
-        {
-            return Problem(
-                title: "Ungültige Berechnung",
-                detail: ex.Message,
-                statusCode: StatusCodes.Status400BadRequest);
-        }
-        catch (OverflowException ex)
-        {
-            return Problem(
-                title: "Ungültige Berechnung",
-                detail: ex.Message,
-                statusCode: StatusCodes.Status400BadRequest);
-        }
-        catch (ArgumentException ex)
-        {
-            return Problem(
-                title: "Ungültige Eingabe",
-                detail: ex.Message,
-                statusCode: StatusCodes.Status400BadRequest);
-        }
-    }
+        => Ok(new CalculationResponse(operation, request.Numbers, calculation(request.Numbers)));
 }

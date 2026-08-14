@@ -11,12 +11,15 @@ Eine REST-API für Grundrechenarten (Addition, Subtraktion, Multiplikation, Divi
 
 ```
 calculator-api/
+├── .github/workflows/api-tests.yml  # CI: Unit-Tests, Docker-Build, API-Tests, Allure-Report
 ├── Calculator.Api/
 │   ├── Calculator.Api.slnx          # Solution
-│   └── Calculator.Api/              # ASP.NET-Core-Projekt
-│       ├── Controllers/             # CalculatorController (4 Endpunkte)
-│       ├── Models/                  # CalculationRequest / CalculationResponse
-│       └── Services/                # ICalculatorService / CalculatorService
+│   ├── Calculator.Api/              # ASP.NET-Core-Projekt
+│   │   ├── Controllers/             # CalculatorController (4 Endpunkte)
+│   │   ├── Infrastructure/          # CalculationExceptionHandler (zentrale Fehlerbehandlung)
+│   │   ├── Models/                  # CalculationRequest / CalculationResponse / OperationNames
+│   │   └── Services/                # ICalculatorService / CalculatorService
+│   └── Calculator.Api.Tests/        # Unit-Tests (xUnit) für den CalculatorService
 ├── docs/
 │   └── Testkonzept.md               # Testkonzept für die API-Tests
 └── Dockerfile
@@ -37,7 +40,7 @@ Im Development-Modus stehen zusätzlich bereit:
 
 ## Endpunkte
 
-Alle Endpunkte erwarten einen `POST`-Request mit `Content-Type: application/json`.
+Alle Rechen-Endpunkte erwarten einen `POST`-Request mit `Content-Type: application/json`.
 
 | Endpunkt | Operation |
 |---|---|
@@ -45,6 +48,9 @@ Alle Endpunkte erwarten einen `POST`-Request mit `Content-Type: application/json
 | `POST /api/calculator/subtract` | Subtrahiert alle weiteren Zahlen von der ersten |
 | `POST /api/calculator/multiply` | Multipliziert alle Zahlen |
 | `POST /api/calculator/divide` | Dividiert die erste Zahl nacheinander durch alle weiteren |
+| `GET /health` | Health-Endpoint (für Probes/Monitoring, liefert `200 Healthy`) |
+
+Zum Schutz vor Überlastung ist ein Rate Limit von 200 Requests pro Sekunde und Client-IP aktiv (darüber: `429 Too Many Requests`).
 
 ### Request
 
@@ -54,7 +60,7 @@ Alle Endpunkte erwarten einen `POST`-Request mit `Content-Type: application/json
 }
 ```
 
-Es müssen **mindestens zwei Zahlen** angegeben werden.
+Es müssen **mindestens zwei** und dürfen **höchstens 1000 Zahlen** angegeben werden.
 
 ### Response (200 OK)
 
@@ -68,13 +74,21 @@ Es müssen **mindestens zwei Zahlen** angegeben werden.
 
 ### Fehlerfälle (400 Bad Request)
 
-Fehler werden als **ProblemDetails** (RFC 9457) zurückgegeben, z. B. bei:
+Fehler werden als **ProblemDetails** (RFC 9457) zurückgegeben – auch unerwartete Fehler (500) und Statuscodes ohne Body (404/405/415) über die zentrale Fehlerbehandlung. Es gibt zwei Ausprägungen:
 
-- weniger als zwei Zahlen oder fehlendem `numbers`-Feld (Validierungsfehler)
-- Division durch null
-- Überlauf (Ergebnis außerhalb des Wertebereichs)
+**Eingabevalidierung** (z. B. weniger als zwei Zahlen, fehlendes `numbers`-Feld) – `ValidationProblemDetails` mit `errors`-Objekt:
 
-Beispiel:
+```json
+{
+  "title": "One or more validation errors occurred.",
+  "status": 400,
+  "errors": {
+    "Numbers": ["Es müssen mindestens zwei Zahlen angegeben werden."]
+  }
+}
+```
+
+**Fachliche Fehler** (Division durch null, Überlauf) – `ProblemDetails` mit `title`/`detail`:
 
 ```json
 {
@@ -92,7 +106,17 @@ Invoke-RestMethod -Uri "http://localhost:5116/api/calculator/add" `
   -Body '{"numbers": [1, 2, 3]}'
 ```
 
+## Unit-Tests
+
+Die Rechenlogik des `CalculatorService` wird durch Unit-Tests (xUnit) abgesichert:
+
+```powershell
+dotnet test Calculator.Api/Calculator.Api.slnx
+```
+
 ## Docker
+
+Das Image läuft aus Sicherheitsgründen als non-root-User (`app`) und bringt einen `HEALTHCHECK` auf `/health` mit.
 
 ```powershell
 docker build -t calculator-api .

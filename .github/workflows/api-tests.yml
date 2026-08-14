@@ -3,10 +3,18 @@ name: Build, Docker & API-Tests
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
+    inputs:
+      tests-ref:
+        description: "Git-Ref des Test-Repos (Branch, Tag oder SHA)"
+        default: "main"
+        required: false
 
 permissions:
   contents: write
+  checks: write
 
 concurrency:
   group: api-tests-${{ github.ref }}
@@ -20,10 +28,19 @@ jobs:
       - name: API-Repo auschecken
         uses: actions/checkout@v4
 
+      - name: .NET SDK einrichten
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Unit-Tests ausführen (CalculatorService)
+        run: dotnet test Calculator.Api/Calculator.Api.slnx -c Release
+
       - name: Test-Repo auschecken
         uses: actions/checkout@v4
         with:
           repository: Sascha-Pommernell/calculator-api-tests-c
+          ref: ${{ inputs.tests-ref || 'main' }}
           path: tests-repo
 
       - name: API-Docker-Image bauen
@@ -38,13 +55,12 @@ jobs:
           docker run -d --name calculator-api \
             --network calc-net \
             -p 8080:8080 \
-            -e ASPNETCORE_ENVIRONMENT=Development \
             calculator-api:ci
 
       - name: Auf API warten
         run: |
           for i in $(seq 1 30); do
-            if curl -fsS http://localhost:8080/openapi/v1.json > /dev/null; then
+            if curl -fsS http://localhost:8080/health > /dev/null; then
               echo "API ist erreichbar."
               exit 0
             fi
@@ -63,8 +79,13 @@ jobs:
           docker run --rm --name calculator-api-tests \
             --network calc-net \
             -e API_BASE_URL=http://calculator-api:8080 \
+            -e CI=true \
             -v "$GITHUB_WORKSPACE/test-results:/results" \
             calculator-api-tests:ci
+
+      - name: Besitzrechte der Testergebnisse übernehmen
+        if: always()
+        run: sudo chown -R "$(id -u):$(id -g)" test-results 2>/dev/null || true
 
       - name: API-Logs anzeigen (bei Testfehlern)
         if: steps.tests.outcome == 'failure'
@@ -76,11 +97,21 @@ jobs:
         with:
           name: testergebnisse
           path: test-results/
+          retention-days: 14
           if-no-files-found: warn
+
+      - name: Testergebnisse als Check veröffentlichen
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: API-Testergebnisse
+          path: test-results/trx/*.trx
+          reporter: dotnet-trx
+          fail-on-error: false
 
       - name: Prüfen, ob gh-pages-Branch existiert
         id: ghpages
-        if: always()
+        if: always() && github.event_name != 'pull_request'
         run: |
           if git ls-remote --exit-code --heads origin gh-pages > /dev/null 2>&1; then
             echo "exists=true" >> "$GITHUB_OUTPUT"
@@ -90,13 +121,13 @@ jobs:
 
       - name: Allure-Historie von GitHub Pages laden
         uses: actions/checkout@v4
-        if: always() && steps.ghpages.outputs.exists == 'true'
+        if: always() && github.event_name != 'pull_request' && steps.ghpages.outputs.exists == 'true'
         with:
           ref: gh-pages
           path: gh-pages
 
       - name: Allure CLI installieren
-        if: always()
+        if: always() && github.event_name != 'pull_request'
         run: |
           ALLURE_VERSION=2.32.0
           curl -fsSLo /tmp/allure.tgz "https://repo.maven.apache.org/maven2/io/qameta/allure/allure-commandline/${ALLURE_VERSION}/allure-commandline-${ALLURE_VERSION}.tgz"
@@ -104,10 +135,8 @@ jobs:
           echo "/opt/allure-${ALLURE_VERSION}/bin" >> "$GITHUB_PATH"
 
       - name: Allure-Report generieren
-        if: always()
+        if: always() && github.event_name != 'pull_request'
         run: |
-          # Container schreibt als root ins Volume – Besitzrechte zurückholen
-          sudo chown -R "$(id -u):$(id -g)" test-results 2>/dev/null || true
           mkdir -p test-results/allure-results
 
           # Historie aus vorherigem Lauf (gh-pages) übernehmen
@@ -135,14 +164,14 @@ jobs:
 
       - name: Allure-Report auf GitHub Pages veröffentlichen
         uses: peaceiris/actions-gh-pages@v4
-        if: always()
+        if: always() && github.event_name != 'pull_request'
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_branch: gh-pages
           publish_dir: allure-history
 
       - name: Link zum Testbericht in die Zusammenfassung schreiben
-        if: always()
+        if: always() && github.event_name != 'pull_request'
         run: |
           REPORT_URL="https://sascha-pommernell.github.io/calculator-api/${{ github.run_number }}/"
           {

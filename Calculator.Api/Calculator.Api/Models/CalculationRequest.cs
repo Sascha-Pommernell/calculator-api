@@ -9,5 +9,6 @@ public sealed record CalculationRequest
 {
     [Required]
     [MinLength(2, ErrorMessage = "Es müssen mindestens zwei Zahlen angegeben werden.")]
+    [MaxLength(1000, ErrorMessage = "Es dürfen höchstens 1000 Zahlen angegeben werden.")]
     public required IReadOnlyList<double> Numbers { get; init; }
 }
