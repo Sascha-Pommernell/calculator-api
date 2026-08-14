@@ -104,3 +104,20 @@ Die API ist anschließend unter `http://localhost:5116` erreichbar (Container-in
 ## Tests
 
 Die API-Tests befinden sich im separaten Projekt **calculator-api-tests-c** (NUnit + Playwright + Allure). Das zugehörige Testkonzept ist in [docs/Testkonzept.md](docs/Testkonzept.md) dokumentiert.
+
+### Continuous Integration (GitHub Actions)
+
+Die Tests werden automatisch über den GitHub-Actions-Workflow [`api-tests.yml`](.github/workflows/api-tests.yml) ausgeführt – bei jedem Push auf `main` sowie manuell per *workflow_dispatch*. Der Workflow:
+
+1. baut API und Tests jeweils als Docker-Image,
+2. startet die API in einem Docker-Netzwerk,
+3. führt die Tests im Container gegen die laufende API aus,
+4. generiert einen **Allure-Report** (inkl. Historie der letzten Läufe) und veröffentlicht ihn auf **GitHub Pages**.
+
+### Testergebnisse (GitHub Pages)
+
+Der aktuelle Allure-Testbericht ist hier abrufbar:
+
+➡️ **<https://sascha-pommernell.github.io/calculator-api/>**
+
+Der Link zum Bericht des jeweiligen Laufs wird zusätzlich in der Workflow-Zusammenfassung (*Summary*) des Actions-Laufs verlinkt; die Rohdaten stehen dort außerdem als Artefakt `testergebnisse` zum Download bereit.
