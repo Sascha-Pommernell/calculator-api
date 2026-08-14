@@ -27,7 +27,7 @@ Die Calculator API stellt vier REST-Endpunkte bereit:
 
 - **Testebene:** API-Tests (Black-Box) gegen die laufende Anwendung – kein Browser nötig, Playwright wird mit dem `APIRequestContext` (`request`-Fixture) verwendet.
 - **Technologie:** Playwright Test (TypeScript), eigenständiges npm-Projekt unter `tests/api`.
-- **Teststart der API:** Playwright-`webServer`-Feature startet die API automatisch via `dotnet run` (HTTP-Profil, `http://localhost:5116`), sowohl lokal als auch in der CI.
+- **Teststart der API:** Die API befindet sich nicht in diesem Repository und wird extern betrieben bzw. gestartet. Die Tests laufen gegen eine bereits laufende API-Instanz; die Basis-URL ist über die Umgebungsvariable `API_BASE_URL` konfigurierbar (Standard: `http://localhost:5116`).
 
 ### 3.2 Testarten
 
@@ -135,22 +135,22 @@ Zusätzlich wird bei den Validierungsfällen (TC-VAL-01 bis TC-VAL-07) die Struk
 | Aspekt | Lokal | CI (GitHub Actions) |
 |---|---|---|
 | Betriebssystem | Windows (Entwicklung) | ubuntu-latest |
-| .NET SDK | 10.0.x | 10.0.x (`actions/setup-dotnet`) |
+| .NET SDK | nicht erforderlich (API extern) | nicht erforderlich (API extern) |
 | Node.js | ≥ 20 | 22 (`actions/setup-node`) |
-| API-Start | automatisch via Playwright `webServer` | identisch |
-| Basis-URL | `http://localhost:5116` | identisch (konfigurierbar via `API_BASE_URL`) |
+| API-Start | extern (laufende API-Instanz erforderlich) | extern (URL via Repository-Variable `API_BASE_URL`) |
+| Basis-URL | `http://localhost:5116` (Standard) | konfigurierbar via `API_BASE_URL` |
 
 ## 6. CI/CD-Integration (GitHub Actions)
 
 - **Trigger:** Push und Pull Request auf `main`, zusätzlich manuell (`workflow_dispatch`).
+- **Workflow-Datei:** `.github/workflows/api-tests.yml`
 - **Ablauf:**
   1. Checkout des Repositories
-  2. Setup .NET 10 SDK und Node.js
-  3. Build der API (`dotnet build`, Release)
-  4. `npm ci` im Testprojekt
-  5. `npx playwright test` (Playwright startet die API selbst)
-  6. Upload des HTML-Testreports als Pages-Artifact
-  7. Veröffentlichung des Reports auf **GitHub Pages** (nur bei Läufen auf `main`)
+  2. Setup Node.js 22 (mit npm-Cache)
+  3. `npm ci` im Testprojekt (`tests/api`)
+  4. `npx playwright test` gegen die extern erreichbare API (`API_BASE_URL` als Repository-Variable)
+  5. Upload des HTML-Testreports als Pages-Artifact (Läufe auf `main`) bzw. als Workflow-Artifact (Pull Requests)
+  6. Veröffentlichung des Reports auf **GitHub Pages** (nur bei Läufen auf `main`)
 - **Fehlerverhalten:** Fehlgeschlagene Tests brechen die Pipeline ab (PR-Gate). In CI werden Tests bei Fehlschlag bis zu 2× wiederholt (Flakiness-Abfederung). Der Report wird auch bei fehlgeschlagenen Tests veröffentlicht, damit Fehleranalysen direkt im Browser möglich sind.
 - **Berechtigungen:** Der Workflow benötigt `pages: write` und `id-token: write`; als Deployment-Mechanismus werden `actions/upload-pages-artifact` und `actions/deploy-pages` verwendet.
 - **Voraussetzung:** In den Repository-Einstellungen muss GitHub Pages mit der Quelle „GitHub Actions“ aktiviert sein.
@@ -175,8 +175,8 @@ Zusätzlich wird bei den Validierungsfällen (TC-VAL-01 bis TC-VAL-07) die Struk
 
 ### 8.2 Eingangskriterien (Entry Criteria)
 
-- Die API baut fehlerfrei (`dotnet build` erfolgreich).
-- Die Testumgebung ist verfügbar (lokal: .NET 10 SDK + Node.js; CI: Runner mit Setup-Actions).
+- Eine laufende, erreichbare Instanz der Calculator API steht unter der konfigurierten `API_BASE_URL` bereit.
+- Die Testumgebung ist verfügbar (lokal: Node.js ≥ 20; CI: Runner mit Setup-Actions).
 - Das Testprojekt ist installierbar (`npm ci` erfolgreich).
 
 ### 8.3 Endekriterien (Exit Criteria / Abnahme)
@@ -187,7 +187,7 @@ Zusätzlich wird bei den Validierungsfällen (TC-VAL-01 bis TC-VAL-07) die Struk
 
 ### 8.4 Abbruch- und Wiederaufnahmekriterien (Suspension Criteria)
 
-- **Abbruch:** Die Testdurchführung wird ausgesetzt, wenn die API nicht startet (webServer-Timeout) oder mehr als 50 % der Tests aufgrund eines Umgebungsproblems fehlschlagen.
+- **Abbruch:** Die Testdurchführung wird ausgesetzt, wenn die API unter der konfigurierten `API_BASE_URL` nicht erreichbar ist oder mehr als 50 % der Tests aufgrund eines Umgebungsproblems fehlschlagen.
 - **Wiederaufnahme:** Nach Behebung des blockierenden Problems und erfolgreichem Smoke-Check (ein Happy-Path-Test pro Endpunkt) wird die vollständige Testsuite erneut ausgeführt.
 
 ## 9. Rückverfolgbarkeit (Traceability)

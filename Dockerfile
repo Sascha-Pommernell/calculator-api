@@ -1,0 +1,19 @@
+# Build-Stage
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /src
+
+COPY Calculator.Api/Calculator.Api/Calculator.Api.csproj Calculator.Api/
+RUN dotnet restore Calculator.Api/Calculator.Api.csproj
+
+COPY Calculator.Api/Calculator.Api/ Calculator.Api/
+RUN dotnet publish Calculator.Api/Calculator.Api.csproj -c Release -o /app /p:UseAppHost=false
+
+# Runtime-Stage
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
+WORKDIR /app
+COPY --from=build /app .
+
+ENV ASPNETCORE_HTTP_PORTS=8080
+EXPOSE 8080
+
+ENTRYPOINT ["dotnet", "Calculator.Api.dll"]
