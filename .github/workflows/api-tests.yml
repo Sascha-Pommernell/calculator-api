@@ -141,6 +141,19 @@ jobs:
           publish_branch: gh-pages
           publish_dir: allure-history
 
+      - name: Link zum Testbericht in die Zusammenfassung schreiben
+        if: always()
+        run: |
+          REPORT_URL="https://sascha-pommernell.github.io/calculator-api/${{ github.run_number }}/"
+          {
+            echo "## 📊 Testbericht"
+            echo ""
+            echo "➡️ **[Allure-Report zu diesem Lauf](${REPORT_URL})**"
+            echo ""
+            echo "_(GitHub Pages braucht nach der Veröffentlichung ggf. 1–2 Minuten.)_"
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "Testbericht: ${REPORT_URL}"
+
       - name: Workflow bei Testfehlern fehlschlagen lassen
         if: steps.tests.outcome == 'failure'
         run: |
