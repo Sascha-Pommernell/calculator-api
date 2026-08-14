@@ -1,0 +1,4 @@
+HTTP 400 Bad Request
+Content-Type: application/problem+json; charset=utf-8
+
+{"type":"https://tools.ietf.org/html/rfc9110#section-15.5.1","title":"One or more validation errors occurred.","status":400,"errors":{"$":["JSON deserialization for type 'Calculator.Api.Models.CalculationRequest' was missing required properties including: 'numbers'."],"request":["The request field is required."]},"traceId":"00-2a1cdd3ca490ea6c6f6d87af171c2f1c-e2475097f92b39f8-00"}
