@@ -78,10 +78,19 @@ jobs:
           path: test-results/
           if-no-files-found: warn
 
+      - name: Prüfen, ob gh-pages-Branch existiert
+        id: ghpages
+        if: always()
+        run: |
+          if git ls-remote --exit-code --heads origin gh-pages > /dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Allure-Historie von GitHub Pages laden
         uses: actions/checkout@v4
-        if: always()
-        continue-on-error: true
+        if: always() && steps.ghpages.outputs.exists == 'true'
         with:
           ref: gh-pages
           path: gh-pages
