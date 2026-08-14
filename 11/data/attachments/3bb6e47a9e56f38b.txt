@@ -1,0 +1,4 @@
+HTTP 400 Bad Request
+Content-Type: application/problem+json; charset=utf-8
+
+{"type":"https://tools.ietf.org/html/rfc9110#section-15.5.1","title":"One or more validation errors occurred.","status":400,"errors":{"Numbers":["Es müssen mindestens zwei Zahlen angegeben werden."]},"traceId":"00-f611dd750e9f4ee73d664c418a245cb0-bf83305cfc9616bf-00"}

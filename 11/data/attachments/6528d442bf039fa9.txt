@@ -1,0 +1,4 @@
+HTTP 405 Method Not Allowed
+Content-Type: application/problem+json
+
+{"type":"https://tools.ietf.org/html/rfc9110#section-15.5.6","title":"Method Not Allowed","status":405,"traceId":"00-2ee426ebd05e1ce0d62feb8758d655e1-18fc4ae827202e74-00"}

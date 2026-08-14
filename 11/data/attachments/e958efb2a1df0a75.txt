@@ -1,0 +1,4 @@
+HTTP 200 OK
+Content-Type: application/json; charset=utf-8
+
+{"operation":"Subtraktion","numbers":[-1,-1],"result":0}

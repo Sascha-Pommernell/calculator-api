@@ -1,0 +1,4 @@
+HTTP 400 Bad Request
+Content-Type: application/problem+json; charset=utf-8
+
+{"type":"https://tools.ietf.org/html/rfc9110#section-15.5.1","title":"One or more validation errors occurred.","status":400,"errors":{"$":["The JSON value could not be converted to Calculator.Api.Models.CalculationRequest. Path: $ | LineNumber: 0 | BytePositionInLine: 30."],"request":["The request field is required."]},"traceId":"00-f08849f0b1366cc3c01d2345a411ab1a-441805c6d9beb45a-00"}
