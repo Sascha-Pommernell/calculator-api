@@ -106,6 +106,8 @@ jobs:
       - name: Allure-Report generieren
         if: always()
         run: |
+          # Container schreibt als root ins Volume – Besitzrechte zurückholen
+          sudo chown -R "$(id -u):$(id -g)" test-results 2>/dev/null || true
           mkdir -p test-results/allure-results
 
           # Historie aus vorherigem Lauf (gh-pages) übernehmen
