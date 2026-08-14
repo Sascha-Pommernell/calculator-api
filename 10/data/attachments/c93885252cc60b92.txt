@@ -1,0 +1,4 @@
+HTTP 404 Not Found
+Content-Type: application/problem+json
+
+{"type":"https://tools.ietf.org/html/rfc9110#section-15.5.5","title":"Not Found","status":404,"traceId":"00-6fcc1c76d549cd6ca290ee59d845214d-0cb63c850fa9849c-00"}

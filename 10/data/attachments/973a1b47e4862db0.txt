@@ -1,0 +1,4 @@
+HTTP 415 Unsupported Media Type
+Content-Type: application/problem+json; charset=utf-8
+
+{"type":"https://tools.ietf.org/html/rfc9110#section-15.5.16","title":"Unsupported Media Type","status":415,"traceId":"00-b7fb21820c57ba23980b37c5addfb478-60501be4eaaaefaa-00"}

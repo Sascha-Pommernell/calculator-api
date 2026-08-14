@@ -1,0 +1,4 @@
+HTTP 400 Bad Request
+Content-Type: application/problem+json
+
+{"type":"https://tools.ietf.org/html/rfc9110#section-15.5.1","title":"Ungültige Berechnung","status":400,"detail":"Division durch null ist nicht erlaubt.","traceId":"00-71e491b9fd6f53d7a4e04e7166f5a69b-65398c640bea447c-00"}

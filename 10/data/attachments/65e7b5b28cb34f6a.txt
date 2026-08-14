@@ -1,0 +1,4 @@
+HTTP 200 OK
+Content-Type: application/json; charset=utf-8
+
+{"operation":"Division","numbers":[0,5],"result":0}

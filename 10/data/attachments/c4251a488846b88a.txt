@@ -1,0 +1,4 @@
+HTTP 400 Bad Request
+Content-Type: application/problem+json; charset=utf-8
+
+{"type":"https://tools.ietf.org/html/rfc9110#section-15.5.1","title":"One or more validation errors occurred.","status":400,"errors":{"Numbers":["Es dürfen höchstens 1000 Zahlen angegeben werden."]},"traceId":"00-55762928419f9f2973651b03fb1aeeef-4a1a28e7bac10636-00"}

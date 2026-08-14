@@ -1,0 +1,4 @@
+HTTP 400 Bad Request
+Content-Type: application/problem+json
+
+{"type":"https://tools.ietf.org/html/rfc9110#section-15.5.1","title":"Ungültige Berechnung","status":400,"detail":"Das Ergebnis liegt außerhalb des darstellbaren Zahlenbereichs.","traceId":"00-0554a100f2a67595e8ea39187ee8743e-fff98e7c01b644e0-00"}
