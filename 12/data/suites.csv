@@ -1,0 +1,59 @@
+"DESCRIPTION","DURATION IN MS","NAME","PARENT SUITE","START TIME","STATUS","STOP TIME","SUB SUITE","SUITE","TEST CLASS","TEST METHOD"
+"TC-DIV0-02: divide(10, 2, 0) → 400 (null an späterer Position)
+","14","TC_DIV0_02_Divide_null_an_spaeterer_Position","","Tue Sep 15 10:47:52 UTC 2026","passed","Tue Sep 15 10:47:52 UTC 2026","","4.3 Division durch null","DivisionByZeroTests","TC_DIV0_02_Divide_null_an_spaeterer_Position"
+"TC-FLT-05: multiply(1e308, 1e308) → 400 (Überlauf)
+","12","TC_FLT_05_Multiply_Ueberlauf","","Tue Sep 15 10:47:52 UTC 2026","passed","Tue Sep 15 10:47:52 UTC 2026","","4.2 Gleitkomma-Randfälle","FloatingPointTests","TC_FLT_05_Multiply_Ueberlauf"
+"TC-VAL-03: ohne Feld numbers → 400
+","4","TC_VAL_03_Ohne_Feld_numbers","","Tue Sep 15 10:47:53 UTC 2026","passed","Tue Sep 15 10:47:53 UTC 2026","","4.4 Eingabevalidierung","ValidationTests","TC_VAL_03_Ohne_Feld_numbers"
+"","11","Operation_liefert_korrektes_Ergebnis(TC-MUL-01 multiply 3*4=12)","","Tue Sep 15 10:47:52 UTC 2026","passed","Tue Sep 15 10:47:52 UTC 2026","","4.1 Happy Path","HappyPathTests","Operation_liefert_korrektes_Ergebnis"
+"","10","Operation_liefert_korrektes_Ergebnis(TC-SUB-02 subtract 10-4-3=3)","","Tue Sep 15 10:47:52 UTC 2026","passed","Tue Sep 15 10:47:52 UTC 2026","","4.1 Happy Path","HappyPathTests","Operation_liefert_korrektes_Ergebnis"
+"","5","Operation_liefert_korrektes_Ergebnis(TC-DIV-04 divide 0/5=0)","","Tue Sep 15 10:47:52 UTC 2026","passed","Tue Sep 15 10:47:52 UTC 2026","","4.1 Happy Path","HappyPathTests","Operation_liefert_korrektes_Ergebnis"
+"TC-FLT-02: add(1e308, 1e308) → 400 (Überlauf)
+","26","TC_FLT_02_Add_Ueberlauf","","Tue Sep 15 10:47:52 UTC 2026","passed","Tue Sep 15 10:47:52 UTC 2026","","4.2 Gleitkomma-Randfälle","FloatingPointTests","TC_FLT_02_Add_Ueberlauf"
+"TC-VAL-02: mit leerem Array → 400
+","4","TC_VAL_02_Leeres_Array","","Tue Sep 15 10:47:53 UTC 2026","passed","Tue Sep 15 10:47:53 UTC 2026","","4.4 Eingabevalidierung","ValidationTests","TC_VAL_02_Leeres_Array"
+"TC-CON-01: Response enthält genau operation, numbers, result
+","2062","TC_CON_01_Response_Felder","","Tue Sep 15 10:47:50 UTC 2026","passed","Tue Sep 15 10:47:52 UTC 2026","","4.5 API-Vertrag","ContractTests","TC_CON_01_Response_Felder"
+"","14","Operation_liefert_korrektes_Ergebnis(TC-ADD-02 add 1+2+3+4=10)","","Tue Sep 15 10:47:52 UTC 2026","passed","Tue Sep 15 10:47:52 UTC 2026","","4.1 Happy Path","HappyPathTests","Operation_liefert_korrektes_Ergebnis"
+"TC-FLT-03: divide(1e308, 1e-308) → 400 (Überlauf)
+","13","TC_FLT_03_Divide_Ueberlauf","","Tue Sep 15 10:47:52 UTC 2026","passed","Tue Sep 15 10:47:52 UTC 2026","","4.2 Gleitkomma-Randfälle","FloatingPointTests","TC_FLT_03_Divide_Ueberlauf"
+"TC-CON-02: Content-Type ist application/json
+","11","TC_CON_02_ContentType","","Tue Sep 15 10:47:52 UTC 2026","passed","Tue Sep 15 10:47:52 UTC 2026","","4.5 API-Vertrag","ContractTests","TC_CON_02_ContentType"
+"TC-CON-03: GET auf POST-Endpunkt → 405 Method Not Allowed
+","11","TC_CON_03_Get_auf_Post_Endpunkt","","Tue Sep 15 10:47:52 UTC 2026","passed","Tue Sep 15 10:47:52 UTC 2026","","4.5 API-Vertrag","ContractTests","TC_CON_03_Get_auf_Post_Endpunkt"
+"TC-VAL-04: mit leerem Body → 400
+","4","TC_VAL_04_Leerer_Body","","Tue Sep 15 10:47:53 UTC 2026","passed","Tue Sep 15 10:47:53 UTC 2026","","4.4 Eingabevalidierung","ValidationTests","TC_VAL_04_Leerer_Body"
+"TC-CON-04: Unbekannte Operation /modulo → 404 Not Found
+","12","TC_CON_04_Unbekannte_Operation","","Tue Sep 15 10:47:52 UTC 2026","passed","Tue Sep 15 10:47:52 UTC 2026","","4.5 API-Vertrag","ContractTests","TC_CON_04_Unbekannte_Operation"
+"TC-CON-05: Unbekannte Zusatzfelder im Body werden toleriert → 200
+","12","TC_CON_05_Zusatzfelder_toleriert","","Tue Sep 15 10:47:52 UTC 2026","passed","Tue Sep 15 10:47:52 UTC 2026","","4.5 API-Vertrag","ContractTests","TC_CON_05_Zusatzfelder_toleriert"
+"TC-FLT-06: subtract(-1e308, 1e308) → 400 (Überlauf ins negative Infinity)
+","8","TC_FLT_06_Subtract_Ueberlauf","","Tue Sep 15 10:47:52 UTC 2026","passed","Tue Sep 15 10:47:52 UTC 2026","","4.2 Gleitkomma-Randfälle","FloatingPointTests","TC_FLT_06_Subtract_Ueberlauf"
+"TC-VAL-05: mit ungültigem Typ → 400
+","4","TC_VAL_05_Ungueltiger_Typ","","Tue Sep 15 10:47:53 UTC 2026","passed","Tue Sep 15 10:47:53 UTC 2026","","4.4 Eingabevalidierung","ValidationTests","TC_VAL_05_Ungueltiger_Typ"
+"TC-VAL-07: mit numbers = null → 400
+","3","TC_VAL_07_Numbers_null","","Tue Sep 15 10:47:53 UTC 2026","passed","Tue Sep 15 10:47:53 UTC 2026","","4.4 Eingabevalidierung","ValidationTests","TC_VAL_07_Numbers_null"
+"TC-FLT-04: divide(1, 3) ≈ 0.3333… (Toleranzvergleich)
+","11","TC_FLT_04_Divide_1_durch_3","","Tue Sep 15 10:47:52 UTC 2026","passed","Tue Sep 15 10:47:52 UTC 2026","","4.2 Gleitkomma-Randfälle","FloatingPointTests","TC_FLT_04_Divide_1_durch_3"
+"TC-FLT-01: add(0.1, 0.2) ≈ 0.3 (Toleranzvergleich)
+","2061","TC_FLT_01_Add_0_1_und_0_2","","Tue Sep 15 10:47:50 UTC 2026","passed","Tue Sep 15 10:47:52 UTC 2026","","4.2 Gleitkomma-Randfälle","FloatingPointTests","TC_FLT_01_Add_0_1_und_0_2"
+"TC-VAL-06: mit syntaktisch ungültigem JSON → 400
+","3","TC_VAL_06_Ungueltiges_JSON","","Tue Sep 15 10:47:53 UTC 2026","passed","Tue Sep 15 10:47:53 UTC 2026","","4.4 Eingabevalidierung","ValidationTests","TC_VAL_06_Ungueltiges_JSON"
+"","10","Operation_liefert_korrektes_Ergebnis(TC-SUB-01 subtract 10-4=6)","","Tue Sep 15 10:47:52 UTC 2026","passed","Tue Sep 15 10:47:52 UTC 2026","","4.1 Happy Path","HappyPathTests","Operation_liefert_korrektes_Ergebnis"
+"TC-VAL-01: mit nur einer Zahl → 400
+","6","TC_VAL_01_Nur_eine_Zahl","","Tue Sep 15 10:47:53 UTC 2026","passed","Tue Sep 15 10:47:53 UTC 2026","","4.4 Eingabevalidierung","ValidationTests","TC_VAL_01_Nur_eine_Zahl"
+"TC-VAL-09: mit mehr als 1000 Zahlen → 400 (Obergrenze)
+","5","TC_VAL_09_Zu_viele_Zahlen","","Tue Sep 15 10:47:53 UTC 2026","passed","Tue Sep 15 10:47:53 UTC 2026","","4.4 Eingabevalidierung","ValidationTests","TC_VAL_09_Zu_viele_Zahlen"
+"","7","Operation_liefert_korrektes_Ergebnis(TC-SUB-03 subtract -1--1=0)","","Tue Sep 15 10:47:52 UTC 2026","passed","Tue Sep 15 10:47:52 UTC 2026","","4.1 Happy Path","HappyPathTests","Operation_liefert_korrektes_Ergebnis"
+"","6","Operation_liefert_korrektes_Ergebnis(TC-DIV-01 divide 10/4=2.5)","","Tue Sep 15 10:47:52 UTC 2026","passed","Tue Sep 15 10:47:52 UTC 2026","","4.1 Happy Path","HappyPathTests","Operation_liefert_korrektes_Ergebnis"
+"","13","Operation_liefert_korrektes_Ergebnis(TC-MUL-04 multiply -2*2.5=-5)","","Tue Sep 15 10:47:52 UTC 2026","passed","Tue Sep 15 10:47:52 UTC 2026","","4.1 Happy Path","HappyPathTests","Operation_liefert_korrektes_Ergebnis"
+"","6","Operation_liefert_korrektes_Ergebnis(TC-DIV-02 divide 100/5/2=10)","","Tue Sep 15 10:47:52 UTC 2026","passed","Tue Sep 15 10:47:52 UTC 2026","","4.1 Happy Path","HappyPathTests","Operation_liefert_korrektes_Ergebnis"
+"","6","Operation_liefert_korrektes_Ergebnis(TC-MUL-03 multiply 5*0=0)","","Tue Sep 15 10:47:52 UTC 2026","passed","Tue Sep 15 10:47:52 UTC 2026","","4.1 Happy Path","HappyPathTests","Operation_liefert_korrektes_Ergebnis"
+"","9","Operation_liefert_korrektes_Ergebnis(TC-MUL-02 multiply 2*3*4=24)","","Tue Sep 15 10:47:52 UTC 2026","passed","Tue Sep 15 10:47:52 UTC 2026","","4.1 Happy Path","HappyPathTests","Operation_liefert_korrektes_Ergebnis"
+"","10","Operation_liefert_korrektes_Ergebnis(TC-ADD-03 add -5+2.5=-2.5)","","Tue Sep 15 10:47:52 UTC 2026","passed","Tue Sep 15 10:47:52 UTC 2026","","4.1 Happy Path","HappyPathTests","Operation_liefert_korrektes_Ergebnis"
+"TC-VAL-08: mit Content-Type text/plain → 415
+","3","TC_VAL_08_ContentType_text_plain","","Tue Sep 15 10:47:53 UTC 2026","passed","Tue Sep 15 10:47:53 UTC 2026","","4.4 Eingabevalidierung","ValidationTests","TC_VAL_08_ContentType_text_plain"
+"","6","Operation_liefert_korrektes_Ergebnis(TC-DIV-03 divide -9/3=-3)","","Tue Sep 15 10:47:52 UTC 2026","passed","Tue Sep 15 10:47:52 UTC 2026","","4.1 Happy Path","HappyPathTests","Operation_liefert_korrektes_Ergebnis"
+"TC-DIV0-01: divide(10, 0) → 400 mit ProblemDetails
+","2058","TC_DIV0_01_Divide_durch_null","","Tue Sep 15 10:47:50 UTC 2026","passed","Tue Sep 15 10:47:52 UTC 2026","","4.3 Division durch null","DivisionByZeroTests","TC_DIV0_01_Divide_durch_null"
+"","2061","Operation_liefert_korrektes_Ergebnis(TC-ADD-01 add 1+2=3)","","Tue Sep 15 10:47:50 UTC 2026","passed","Tue Sep 15 10:47:52 UTC 2026","","4.1 Happy Path","HappyPathTests","Operation_liefert_korrektes_Ergebnis"

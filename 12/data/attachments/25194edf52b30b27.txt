@@ -1,0 +1,4 @@
+HTTP 400 Bad Request
+Content-Type: application/problem+json; charset=utf-8
+
+{"type":"https://tools.ietf.org/html/rfc9110#section-15.5.1","title":"One or more validation errors occurred.","status":400,"errors":{"request":["The request field is required."],"$.numbers[0]":["The JSON value could not be converted to System.Decimal. Path: $.numbers[0] | LineNumber: 0 | BytePositionInLine: 19."]},"traceId":"00-63d11d272ab4e05cb86d53fc09f94d1d-c638bf577691556c-00"}
