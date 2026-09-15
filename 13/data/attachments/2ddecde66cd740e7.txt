@@ -1,0 +1,4 @@
+HTTP 400 Bad Request
+Content-Type: application/problem+json
+
+{"type":"https://tools.ietf.org/html/rfc9110#section-15.5.1","title":"Ungültige Berechnung","status":400,"detail":"Value was either too large or too small for a Decimal.","traceId":"00-f3758c368625fa545980fcae6fb1a19d-e025a149371cd1b9-00"}

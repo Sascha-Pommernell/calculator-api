@@ -1,0 +1,4 @@
+HTTP 400 Bad Request
+Content-Type: application/problem+json; charset=utf-8
+
+{"type":"https://tools.ietf.org/html/rfc9110#section-15.5.1","title":"One or more validation errors occurred.","status":400,"errors":{"Numbers":["The Numbers field is required."]},"traceId":"00-24782c4979dff4816a73d8e8cd00a338-1dd6394e37d5d74f-00"}
