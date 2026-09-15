@@ -2,25 +2,25 @@ namespace Calculator.Api.Services;
 
 public sealed class CalculatorService : ICalculatorService
 {
-    public double Add(IReadOnlyList<double> numbers)
+    public decimal Add(IReadOnlyList<decimal> numbers)
     {
         ValidateInput(numbers);
         return EnsureFinite(numbers.Sum());
     }
 
-    public double Subtract(IReadOnlyList<double> numbers)
+    public decimal Subtract(IReadOnlyList<decimal> numbers)
     {
         ValidateInput(numbers);
         return EnsureFinite(numbers.Skip(1).Aggregate(numbers[0], (result, number) => result - number));
     }
 
-    public double Multiply(IReadOnlyList<double> numbers)
+    public decimal Multiply(IReadOnlyList<decimal> numbers)
     {
         ValidateInput(numbers);
         return EnsureFinite(numbers.Skip(1).Aggregate(numbers[0], (result, number) => result * number));
     }
 
-    public double Divide(IReadOnlyList<double> numbers)
+    public decimal Divide(IReadOnlyList<decimal> numbers)
     {
         ValidateInput(numbers);
 
@@ -32,9 +32,9 @@ public sealed class CalculatorService : ICalculatorService
         return EnsureFinite(numbers.Skip(1).Aggregate(numbers[0], (result, number) => result / number));
     }
 
-    private static double EnsureFinite(double result)
+    private static decimal EnsureFinite(decimal result)
     {
-        if (!double.IsFinite(result))
+        if (result == decimal.MaxValue || result == decimal.MinValue)
         {
             throw new OverflowException("Das Ergebnis liegt außerhalb des darstellbaren Zahlenbereichs.");
         }
@@ -42,7 +42,7 @@ public sealed class CalculatorService : ICalculatorService
         return result;
     }
 
-    private static void ValidateInput(IReadOnlyList<double> numbers)
+    private static void ValidateInput(IReadOnlyList<decimal> numbers)
     {
         ArgumentNullException.ThrowIfNull(numbers);
 

@@ -63,6 +63,6 @@ public sealed class CalculatorController : ControllerBase
     private ActionResult<CalculationResponse> Calculate(
         string operation,
         CalculationRequest request,
-        Func<IReadOnlyList<double>, double> calculation)
+        Func<IReadOnlyList<decimal>, decimal> calculation)
         => Ok(new CalculationResponse(operation, request.Numbers, calculation(request.Numbers)));
 }

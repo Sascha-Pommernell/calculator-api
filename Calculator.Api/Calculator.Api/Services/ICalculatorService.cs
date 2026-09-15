@@ -5,11 +5,11 @@ namespace Calculator.Api.Services;
 /// </summary>
 public interface ICalculatorService
 {
-    double Add(IReadOnlyList<double> numbers);
+    decimal Add(IReadOnlyList<decimal> numbers);
 
-    double Subtract(IReadOnlyList<double> numbers);
+    decimal Subtract(IReadOnlyList<decimal> numbers);
 
-    double Multiply(IReadOnlyList<double> numbers);
+    decimal Multiply(IReadOnlyList<decimal> numbers);
 
-    double Divide(IReadOnlyList<double> numbers);
+    decimal Divide(IReadOnlyList<decimal> numbers);
 }

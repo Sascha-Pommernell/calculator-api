@@ -19,7 +19,9 @@ Die Calculator API stellt vier REST-Endpunkte bereit:
 
 **Response (200):** `{ "operation": string, "numbers": number[], "result": number }`
 
-**Fehlerfälle (400):** ProblemDetails bei Division durch null, weniger als zwei Zahlen, fehlendem/ungültigem Body.
+**Zahlentyp:** Alle Zahlen (Eingabe und Ergebnis) werden serverseitig als `decimal` (`System.Decimal`) verarbeitet: 28–29 signifikante Stellen, exakte Dezimalarithmetik ohne binäre Gleitkomma-Rundungsfehler, Wertebereich ±79228162514264337593543950335 (≈ ±7,9 × 10²⁸). JSON-Zahlen außerhalb dieses Bereichs (z. B. `1e308`) können nicht deserialisiert werden und werden als ungültige Eingabe abgelehnt.
+
+**Fehlerfälle (400):** ProblemDetails bei Division durch null, arithmetischem Überlauf, weniger als zwei Zahlen, fehlendem/ungültigem Body.
 
 Zusätzlich stellt die API einen Health-Endpoint `GET /health` bereit, der von Tests und CI als Erreichbarkeits-Probe genutzt wird.
 
@@ -51,9 +53,9 @@ Die Testfälle in Kapitel 4 wurden mit folgenden Black-Box-Testentwurfsverfahren
 | Verfahren | Anwendung |
 |---|---|
 | Äquivalenzklassenbildung | Gültige Eingaben (≥ 2 Zahlen, positive/negative/dezimale Werte) vs. ungültige Eingaben (< 2 Zahlen, > 1000 Zahlen, null, falsche Typen, ungültiges JSON) |
-| Grenzwertanalyse | Leeres Array / 1 Zahl / 2 Zahlen; Obergrenze 1000/1001 Zahlen; Divisor 0; Zahlbereichsgrenzen (`1e308`, `1e-308`) |
+| Grenzwertanalyse | Leeres Array / 1 Zahl / 2 Zahlen; Obergrenze 1000/1001 Zahlen; Divisor 0; Zahlbereichsgrenzen von `decimal` (`decimal.MaxValue` ± 1, `decimal.MinValue` − 1, Werte außerhalb des Bereichs wie `1e308`) |
 | Zustandsunabhängige Vertragsprüfung | Response-Struktur, Statuscodes, HTTP-Methoden, Routen |
-| Fehlererwartungsmethode (Error Guessing) | Gleitkomma-Präzision (0.1 + 0.2), Überlauf/`Infinity`-Serialisierung, Zusatzfelder im Body |
+| Fehlererwartungsmethode (Error Guessing) | Dezimalpräzision (0.1 + 0.2 muss exakt 0.3 ergeben), periodische Ergebnisse (1/3), arithmetischer Überlauf, Zusatzfelder im Body |
 
 ### 3.4 Risikobasierte Priorisierung
 
@@ -62,7 +64,7 @@ Jeder Testfallgruppe ist eine Priorität zugeordnet, die die Ausführungs- und B
 | Priorität | Testfallgruppen | Begründung |
 |---|---|---|
 | Hoch | 4.1 Happy Path, 4.3 Division durch null, 4.4 Eingabevalidierung | Kernfunktionalität und Fehlerbehandlung; Fehler hier betreffen alle Nutzer direkt |
-| Mittel | 4.2 Gleitkomma-Randfälle, 4.5 API-Vertrag | Randbedingungen und Vertragsstabilität; geringere Eintrittswahrscheinlichkeit |
+| Mittel | 4.2 Dezimal-Randfälle, 4.5 API-Vertrag | Randbedingungen und Vertragsstabilität; geringere Eintrittswahrscheinlichkeit |
 
 Die Prioritäten sind im Testcode als NUnit-Kategorien (`[Category("Prio-Hoch")]` / `[Category("Prio-Mittel")]`) sowie als Allure-Severity (`critical` / `normal`) hinterlegt. Ein priorisierter Lauf ist damit gezielt möglich, z. B.:
 
@@ -97,18 +99,20 @@ dotnet test --filter "TestCategory=Prio-Hoch"
 | TC-DIV-03 | divide | [-9, 3] | -3 |
 | TC-DIV-04 | divide | [0, 5] | 0 (Dividend null ist erlaubt) |
 
-### 4.2 Gleitkomma-Randfälle
+### 4.2 Dezimal-Randfälle (Präzision und Zahlenbereich)
 
 | ID | Endpunkt | Eingabe | Erwartung |
 |---|---|---|---|
-| TC-FLT-01 | add | [0.1, 0.2] | 200, Ergebnis ≈ 0.3 (Toleranzvergleich) |
-| TC-FLT-02 | add | [1e308, 1e308] | 400 Bad Request – arithmetischer Überlauf (`Infinity`) wird als ungültige Berechnung abgelehnt |
-| TC-FLT-03 | divide | [1e308, 1e-308] | 400 Bad Request – Überlauf bei Division, analog TC-FLT-02 |
-| TC-FLT-04 | divide | [1, 3] | 200, Ergebnis ≈ 0.3333… (periodisches Ergebnis, Toleranzvergleich) |
-| TC-FLT-05 | multiply | [1e308, 1e308] | 400 Bad Request – Überlauf bei Multiplikation |
-| TC-FLT-06 | subtract | [-1e308, 1e308] | 400 Bad Request – Überlauf ins negative `Infinity` bei Subtraktion |
+| TC-DEC-01 | add | [0.1, 0.2] | 200, Ergebnis **exakt** 0.3 (kein Toleranzvergleich; bei `double` wäre 0.30000000000000004 herausgekommen) |
+| TC-DEC-02 | subtract | [1, 0.9] | 200, Ergebnis exakt 0.1 |
+| TC-DEC-03 | multiply | [1.1, 1.1] | 200, Ergebnis exakt 1.21 |
+| TC-DEC-04 | divide | [1, 3] | 200, Ergebnis 0.3333333333333333333333333333 (28 Nachkommastellen = maximale `decimal`-Genauigkeit, exakter Vergleich) |
+| TC-DEC-05 | add | [79228162514264337593543950335, 1] | 400 Bad Request – arithmetischer Überlauf (`decimal.MaxValue` + 1) |
+| TC-DEC-06 | subtract | [-79228162514264337593543950335, 1] | 400 Bad Request – negativer Überlauf (`decimal.MinValue` − 1) |
+| TC-DEC-07 | multiply | [1000000000000000, 1000000000000000] | 400 Bad Request – Überlauf bei Multiplikation (Produkt 10³⁰ > `decimal.MaxValue`) |
+| TC-DEC-08 | divide | [79228162514264337593543950335, 0.5] | 400 Bad Request – Überlauf bei Division |
 
-> **Hinweis:** Die API prüft das Ergebnis auf `double.IsFinite`; arithmetische Überläufe (`Infinity`/`NaN`) werden mit 400 Bad Request (ProblemDetails, Titel „Ungültige Berechnung“) abgelehnt.
+> **Hinweis:** `decimal`-Arithmetik ist in .NET überlaufgeprüft; Überläufe führen zu einer `OverflowException`, die der `CalculationExceptionHandler` in 400 Bad Request (ProblemDetails, Titel „Ungültige Berechnung“) übersetzt. Ein `Infinity`/`NaN`-Zustand wie bei `double` existiert bei `decimal` nicht. Die Ergebnisse von TC-DEC-01 bis TC-DEC-04 werden im Test als `decimal` gelesen (`GetDecimal()`), um die volle Genauigkeit vergleichen zu können.
 
 ### 4.3 Division durch null (erwartet: 400 Bad Request)
 
@@ -130,8 +134,10 @@ dotnet test --filter "TestCategory=Prio-Hoch"
 | TC-VAL-07 | `{ "numbers": null }` | 400 – explizit null (eigener Pfad gegenüber fehlendem Feld) |
 | TC-VAL-08 | gültiger Body mit `Content-Type: text/plain` | 415 Unsupported Media Type |
 | TC-VAL-09 | `{ "numbers": [1, 1, …] }` mit 1001 Zahlen | 400 – Obergrenze (max. 1000) überschritten |
+| TC-VAL-10 | `{ "numbers": [1e308, 1] }` | 400 – Zahl außerhalb des `decimal`-Wertebereichs (Deserialisierung schlägt fehl) |
+| TC-VAL-11 | `{ "numbers": [79228162514264337593543950336, 1] }` | 400 – Grenzwert `decimal.MaxValue` + 1 als Literal ist nicht darstellbar |
 
-Zusätzlich wird bei den Validierungsfällen (TC-VAL-01 bis TC-VAL-07 sowie TC-VAL-09) die Struktur der Fehlerantwort geprüft: ProblemDetails gemäß RFC 9457 mit `title`, `status` und nicht-leerem `errors`-Objekt (Modelvalidierung).
+Zusätzlich wird bei den Validierungsfällen (TC-VAL-01 bis TC-VAL-07 sowie TC-VAL-09 bis TC-VAL-11) die Struktur der Fehlerantwort geprüft: ProblemDetails gemäß RFC 9457 mit `title`, `status` und nicht-leerem `errors`-Objekt (Modelvalidierung).
 
 ### 4.5 API-Vertrag / Robustheit
 
@@ -214,7 +220,7 @@ Beide Repositories besitzen eine eigene Pipeline:
 
 ## 9. Rückverfolgbarkeit (Traceability)
 
-- Jeder automatisierte Test trägt die Testfall-ID aus Kapitel 4 im Testnamen bzw. in der Testbeschreibung (z. B. `TC-ADD-01 add 1+2=3` via `SetArgDisplayNames` oder `TC-FLT-01: …` via `Description`).
+- Jeder automatisierte Test trägt die Testfall-ID aus Kapitel 4 im Testnamen bzw. in der Testbeschreibung (z. B. `TC-ADD-01 add 1+2=3` via `SetArgDisplayNames` oder `TC-DEC-01: …` via `Description`).
 - Dadurch ist die Zuordnung Testkonzept ↔ Testcode ↔ Testreport (Allure/TRX) lückenlos möglich.
 - Bei Änderungen am Testkonzept werden betroffene Testfall-IDs im Commit/PR referenziert.
 
@@ -222,7 +228,8 @@ Beide Repositories besitzen eine eigene Pipeline:
 
 - Gefundene Abweichungen werden als **GitHub Issues** im Repository erfasst.
 - Jedes Issue enthält: betroffene Testfall-ID(s), Ist- und Soll-Verhalten, Reproduktionsschritte (Request-Beispiel) und Link zum fehlgeschlagenen Workflow-Lauf.
-- Bekannte offene Defects: derzeit keine. (Das Überlaufverhalten TC-FLT-02/03 wurde durch eine `double.IsFinite`-Prüfung im `CalculatorService` behoben; Überläufe liefern jetzt 400 Bad Request.)
+- Bekannte offene Defects: derzeit keine.
+- Historie: Das ursprüngliche `double`-Überlaufverhalten (`Infinity`-Serialisierung, ehemals TC-FLT-02/03) wurde zunächst durch eine `double.IsFinite`-Prüfung behoben. Mit der Umstellung der API auf `decimal` wurde die Testfallgruppe 4.2 neu entworfen (TC-DEC-01 bis TC-DEC-08, exakte Vergleiche statt Toleranz, Überlauf an den `decimal`-Grenzen) und die Eingabevalidierung um TC-VAL-10/11 ergänzt.
 
 ## 11. Wartung und Erweiterung
 

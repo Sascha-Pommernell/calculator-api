@@ -3,4 +3,4 @@ namespace Calculator.Api.Models;
 /// <summary>
 /// Ergebnis einer Berechnung.
 /// </summary>
-public sealed record CalculationResponse(string Operation, IReadOnlyList<double> Numbers, double Result);
+public sealed record CalculationResponse(string Operation, IReadOnlyList<decimal> Numbers, decimal Result);
